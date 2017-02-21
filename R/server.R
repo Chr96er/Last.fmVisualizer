@@ -173,9 +173,9 @@ function(input, output, session) {
           #set tag to unknown by default since it may be missing in lastfms json answer
           sunburstDataset[i, "tag"] = "unknown"
           if (is.null(JSONObject$error) &&
-              !is.null(JSONObject$track$tag$title[1])) {
+              !is.null(JSONObject$track$toptags$tag$name[1])) {
             sunburstDataset[i, "tag"] = gsub(
-              JSONObject$track$tag$title[1],
+              JSONObject$track$toptags$tag$name[1],
               pattern = "-",
               replacement = hypenReplacement
             )
