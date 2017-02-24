@@ -6,8 +6,8 @@ require(jsonlite)
 require(curl)
 require(magrittr)
 
-source("helpers.R")
-source("apiKey.R") #contains one line to set lastfm apiKey like so: apiKey <-"01234567890123456789012345678901"
+source("utilities.R")
+source("manual.R")
 
 #Temporary fix: variables for sunburst using hyphen as only split-character
 hypenReplacement <- " " #Hyphens are replaced by this string
@@ -16,6 +16,11 @@ concatSeparator <-
   ": " #For concatenating multiple elements in one level
 
 function(input, output, session) {
+  
+  output$manual <- renderUI({
+    manual("The lastfmVisualizer application plots a user's top tags, artists, albums, and tracks as sunburst charts, using the last.fm API. Insert a last.fm user name or select a friend to get started. Source code available under https://github.com/Chr96er/Last.fmVisualizer")
+  })
+  
   getUsername <- reactive({
     #Make sure all required variables exist, else exit function
     req(input$username)
@@ -54,7 +59,6 @@ function(input, output, session) {
 
     JSONString <-
       buildJSONString(
-        apiKey = apiKey,
         method = "user",
         element = element,
         username = username,
@@ -135,7 +139,6 @@ function(input, output, session) {
             #Use mbid to look up track
             JSONString <-
               buildJSONString(
-                apiKey = apiKey,
                 method = "track",
                 element = "info",
                 mbid = jsonDataset[i, ]$mbid
@@ -144,7 +147,6 @@ function(input, output, session) {
             #mbid is missing -> use artist and track for lookup
             JSONString <-
               buildJSONString(
-                apiKey = apiKey,
                 method = "track",
                 element = "info",
                 artist = jsonDataset[i, ]$artist$name,
@@ -212,7 +214,6 @@ function(input, output, session) {
 
       JSONString <-
         buildJSONString(
-          apiKey = apiKey,
           method = "user",
           element = "friends",
           username = username,
@@ -276,12 +277,12 @@ function(input, output, session) {
   output$username <- renderUI({
     if (is.null(input$friend)) {
       textInput("username",
-                "LastFM Username:",
+                "last.fm Username:",
                 value = "",
                 placeholder = "e.g. Chr_96er")
     }
     else{
-      textInput("username", "LastFM Username:", input$friend)
+      textInput("username", "last.fm Username:", input$friend)
     }
   })
 }

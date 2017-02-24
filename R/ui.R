@@ -3,7 +3,8 @@ require(shinythemes)
 require(sunburstR)
 
 fluidPage(theme = "bootstrap.css",
-          titlePanel("LastFM Visualizer"),
+          titlePanel("lastfmVisualizer"),
+          uiOutput("manual"),
           sidebarLayout(
             sidebarPanel(
               uiOutput("username"),

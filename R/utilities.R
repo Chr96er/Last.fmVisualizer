@@ -1,21 +1,7 @@
-require(RCurl)
-#'Code by http://stackoverflow.com/a/32897076/4166885
-serverReachable <- function(url) {
-  # status <- tryCatch(
-  #   getURL(url, ssl.verifypeer = FALSE, useragent = "R"),
-  #   error = function(e)
-  #     e
-  # )
-  # if (inherits(status, "error")) {
-  #   return(F)
-  # } else{
-  return(T)
-  # }
-}
+source("apiKey.R") #contains one line to set lastfm apiKey like so: apiKey <-"01234567890123456789012345678901"
 
 buildJSONString <-
-  function(apiKey,
-           method,
+  function(method,
            element,
            username = "",
            limit = 0,
