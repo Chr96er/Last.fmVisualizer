@@ -18,7 +18,7 @@ fluidPage(theme = "bootstrap.css",
               ),
               radioButtons(
                 "element",
-                "Artist/Album/Track:",
+                "Tag/Artist/Album/Track:",
                 choices = c(
                   "Artist",
                   "Artist-Album",
