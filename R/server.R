@@ -7,7 +7,9 @@ require(curl)
 require(magrittr)
 
 source("utilities.R")
-source("manual.R")
+source("shinyUtilities.R")
+
+VERSION = strsplit(gsub(".VERSION",replacement = "",dir()[grep(dir(),pattern = "VERSION")]),"\\.")[[1]] 
 
 #Temporary fix: variables for sunburst using hyphen as only split-character
 hypenReplacement <- " " #Hyphens are replaced by this string
@@ -17,8 +19,17 @@ concatSeparator <-
 
 function(input, output, session) {
   
+  output$version <- renderUI({
+    list(tags$p("Source code available under https://github.com/Chr96er/Last.fmVisualizer"),
+    tags$p("Version ", paste(VERSION[1:3],collapse = "."), "; build ", VERSION[4],align="right"))
+  })
+  
   output$manual <- renderUI({
-    manual("The lastfmVisualizer application plots a user's top tags, artists, albums, and tracks as sunburst charts, using the last.fm API. Insert a last.fm user name or select a friend to get started. Source code available under https://github.com/Chr96er/Last.fmVisualizer")
+    manual("The lastfmVisualizer application plots a user's top tags, artists, albums, and tracks as sunburst charts, using the last.fm API. Insert a last.fm user name or select a friend to get started.")
+  })
+  
+  output$head <- renderUI({
+    htmlStyle()
   })
   
   getUsername <- reactive({

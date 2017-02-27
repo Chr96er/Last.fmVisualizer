@@ -4,6 +4,7 @@ require(sunburstR)
 
 fluidPage(theme = "bootstrap.css",
           titlePanel("lastfmVisualizer"),
+          uiOutput("head"),
           uiOutput("manual"),
           sidebarLayout(
             sidebarPanel(
@@ -44,4 +45,5 @@ fluidPage(theme = "bootstrap.css",
               )
             ),
             mainPanel(sunburstOutput("sunburst"))
-          ))
+          ),
+          absolutePanel(uiOutput("version"),bottom = 0, right = 10))
