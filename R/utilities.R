@@ -4,6 +4,7 @@
 #'@import shinyUtils
 #'@importFrom sunburstR sunburstOutput
 #'@importFrom shinyjs runjs
+#'@import data.table
 
 #'@export
 buildJSONString <-

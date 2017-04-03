@@ -2,6 +2,7 @@
 
 export(buildJSONString)
 export(openLink)
+import(data.table)
 import(shiny)
 import(shinyUtils)
 importFrom(jsonlite,fromJSON)
