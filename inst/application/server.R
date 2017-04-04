@@ -9,9 +9,6 @@
 library(shiny)
 library(shinyUtils)
 library(data.table)
-# library(sunburstR)
-# library(jsonlite)
-# library(curl)
 library(Last.fmVisualizer)
 
 VERSION = strsplit(gsub(".VERSION", replacement = "", dir()[grep(dir(), pattern = "VERSION")]), "\\.")[[1]]
