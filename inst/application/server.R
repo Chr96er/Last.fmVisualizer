@@ -22,8 +22,6 @@ concatSeparator <-
   ": " #For concatenating multiple elements in one level
 
 function(input, output, session) {
-  output$wd <- renderText({print(getwd())})
-  
   output$version <- renderUI({
     list(
       tags$p(

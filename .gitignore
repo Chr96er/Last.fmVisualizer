@@ -46,4 +46,4 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 # rsconnect directory for shinyapps.io deployment
-/rsconnect/
+**/rsconnect/

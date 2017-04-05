@@ -13,7 +13,6 @@ fluidPage(
   uiOutput("manual"),
   sidebarLayout(
     sidebarPanel(
-      textOutput("wd"),
       uiOutput("username"),
       uiOutput("friends"),
       # Only show this panel if long lasting operations expected
