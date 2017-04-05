@@ -6,6 +6,8 @@
 #'@import shiny
 #'@import shinyUtils
 #'@importFrom shinyjs runjs
+#'@import curl
+library(curl)
 library(shiny)
 library(shinyUtils)
 library(data.table)

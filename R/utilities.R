@@ -5,6 +5,7 @@
 #'@importFrom sunburstR sunburstOutput
 #'@importFrom shinyjs runjs
 #'@import data.table
+#'@import curl
 
 #'@export
 buildJSONString <-
@@ -16,6 +17,7 @@ buildJSONString <-
            artist = "",
            track = "",
            period = "") {
+    print(getwd())
     if (file.exists(paste0(getwd(), "/inst/apiKeys/lastfm.R"))) {
       lastfmApiKey <-
         readLines(paste0(getwd(), "/inst/apiKeys/lastfm")) #contains one line to set lastfm apiKey like so: lastfmApiKey <-"01234567890123456789012345678901"

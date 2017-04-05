@@ -6,7 +6,7 @@ Author: Christian Homberg
 Maintainer: Christian Homberg <christianhomberg@gmail.com>
 Description: Webwidget that provides functions for visualizing last.fm scrobble data for users. Based on D3.js and sunshine.
 License: GPL-3
-Depends: R (>= 3.3.2), shiny, shinyUtils, data.table
+Depends: R (>= 3.3.2), shiny, shinyUtils, data.table, curl
 Imports: sunburstR, jsonlite, shinyjs
 Encoding: UTF-8
 LazyData: true
