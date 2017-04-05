@@ -75,11 +75,11 @@ function(input, output, session) {
   )
     })
   
-  getUsername <- reactive({
+  getUsername <- throttle(reactive({
     #Make sure all required variables exist, else exit function
     req(input$username)
     input$username
-  })
+  }), 2000)
   
   sunburstDataset <- reactive({
     #Make sure all required variables exist, else exit function
@@ -119,6 +119,8 @@ function(input, output, session) {
       "topartists" = JSONObject$topartists$artist,
       "toptracks" = JSONObject$toptracks$track
     )
+    
+    shiny::validate(need(!is.null(nrow(jsonDataset)), message = "No data for user available"))
     
     #hyphens need to be replaced right now, until sunshine accepts a parameter for splitting levels
     name <- gsub(jsonDataset$name,
@@ -283,6 +285,10 @@ function(input, output, session) {
   output$friends <- renderUI({
     withProgress({
       friendsDataset <- friendsDataset()
+      shiny::validate(need(
+        !is.null(friendsDataset),
+        "This user has not last.fm friends"
+      ))
       rows <- lapply(friendsDataset, function(x)
       {
         list(actionLink(x,
@@ -373,8 +379,8 @@ function(input, output, session) {
                "&type=artist")
       url <- gsub(" ", "+", url)
       JSONObject <- jsonlite::fromJSON(url)
-      if(length(JSONObject$artist$items) > 0){
-        extUrl <- JSONObject$artist$items$external_urls[1, ]
+      if (length(JSONObject$artist$items) > 0) {
+        extUrl <- JSONObject$artist$items$external_urls[1,]
       }
     } else
     {
@@ -392,16 +398,22 @@ function(input, output, session) {
         )
       url <- gsub(" ", "+", url)
       JSONObject <- jsonlite::fromJSON(url)
-      if(!is.null(c(JSONObject$tracks$items$external_urls[1],
-         JSONObject$albums$items$external_urls[1]))){
-        extUrl = max(JSONObject$tracks$items$external_urls[1, ],
-                     JSONObject$albums$items$external_urls[1, ])  
+      if (!is.null(
+        c(
+          JSONObject$tracks$items$external_urls[1],
+          JSONObject$albums$items$external_urls[1]
+        )
+      )) {
+        extUrl = max(
+          JSONObject$tracks$items$external_urls[1,],
+          JSONObject$albums$items$external_urls[1,]
+        )
       } else {
         extUrl = NULL
       }
       
     }
-    if(!is.null(extUrl)){
+    if (!is.null(extUrl)) {
       openLink(extUrl, "modal")
     }
   }
