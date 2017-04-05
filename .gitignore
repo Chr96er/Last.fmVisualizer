@@ -25,7 +25,7 @@ vignettes/*.pdf
 .Rproj.user
 packrat/lib*/
 # Api Keys
-/apiKeys/
+**/apiKeys/
 # Example code in package build process
 *-Ex.R
 # Output files from R CMD build
