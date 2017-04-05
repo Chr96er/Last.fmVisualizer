@@ -75,11 +75,11 @@ function(input, output, session) {
   )
     })
   
-  getUsername <- throttle(reactive({
+  getUsername <- debounce(reactive({
     #Make sure all required variables exist, else exit function
     req(input$username)
     input$username
-  }), 2000)
+  }), 1000)
   
   sunburstDataset <- reactive({
     #Make sure all required variables exist, else exit function
@@ -142,22 +142,20 @@ function(input, output, session) {
     sunburstDataset <- switch(
       input$element,
       "Album" = data.table(name,
-                           playcount, stringsAsFactors = F),
-      "Artist" = data.table(name,
-                            playcount, stringsAsFactors = F),
+                           playcount),
+      "Artist" = data.table(artistName = name,
+                            playcount),
       "Track" = data.table(name,
-                           playcount, stringsAsFactors = F),
+                           playcount),
       "Artist-Album" = data.table(artistName,
                                   name,
-                                  playcount, stringsAsFactors = F),
+                                  playcount),
       "Artist-Track" = data.table(artistName,
                                   name,
-                                  playcount,
-                                  stringsAsFactors = F),
+                                  playcount),
       "Tag-Artist-Album-Track" = data.table(artistName,
                                             name,
-                                            playcount,
-                                            stringsAsFactors = F)
+                                            playcount)
     )
     return(sunburstDataset)
   })
@@ -335,22 +333,22 @@ function(input, output, session) {
                  sunburstDataset <- sunburstDataset()
                  #Order by artist count
                  if (input$element == "Artist") {
-                   #artistName is in column name
-                   sunburstDataset[, artistName := name]
-                 }
-                 sunburstDataset <-
-                   sunburstDataset[, .(name), by = artistName]
-                 unfolded <- c()
-                 for (i in 1:nrow(unique(sunburstDataset, by = "artistName"))) {
-                   currentArtist <-
-                     unique(sunburstDataset, by = "artistName")[i, artistName]
-                   unfolded <-
-                     c(unfolded, currentArtist, sunburstDataset[artistName == currentArtist, name])
+                   unfolded <- sunburstDataset[, artistName]
+                 } else{
+                   sunburstDataset <-
+                     sunburstDataset[, .(name), by = artistName]
+                   unfolded <- c()
+                   for (i in 1:nrow(unique(sunburstDataset, by = "artistName"))) {
+                     currentArtist <-
+                       unique(sunburstDataset, by = "artistName")[i, artistName]
+                     unfolded <-
+                       c(unfolded, currentArtist, sunburstDataset[artistName == currentArtist, name])
+                   }
                  }
                  
                  clicked <- unfolded[linkID]
                  if (sunburstDataset[artistName == clicked, .N]) {
-                   #Artist clicked - get artist's tracks/albums
+                   #Artist clicked - ToDo: get artist's tracks/albums
                    # tracks/albums <- sunburstDataset[artistName == clicked, name] #ToDo: Get all child tracks/albums and pass to spotify
                    tracks_albums <- NULL
                    artist <- clicked
@@ -380,7 +378,7 @@ function(input, output, session) {
       url <- gsub(" ", "+", url)
       JSONObject <- jsonlite::fromJSON(url)
       if (length(JSONObject$artist$items) > 0) {
-        extUrl <- JSONObject$artist$items$external_urls[1,]
+        extUrl <- JSONObject$artist$items$external_urls[1, ]
       }
     } else
     {
@@ -405,8 +403,8 @@ function(input, output, session) {
         )
       )) {
         extUrl = max(
-          JSONObject$tracks$items$external_urls[1,],
-          JSONObject$albums$items$external_urls[1,]
+          JSONObject$tracks$items$external_urls[1, ],
+          JSONObject$albums$items$external_urls[1, ]
         )
       } else {
         extUrl = NULL
