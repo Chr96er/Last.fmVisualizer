@@ -16,12 +16,14 @@ buildJSONString <-
            artist = "",
            track = "",
            period = "") {
-    if (file.exists(paste0(getwd(), "/inst/apiKeys/lastfm"))) {
+    if (file.exists(paste0(getwd(), "/www/apiKeys/lastfm"))) {
+      #inst/application/ is wd
       lastfmApiKey <-
-        readLines(paste0(getwd(), "/inst/apiKeys/lastfm")) #contains one line to set lastfm apiKey like so: lastfmApiKey <-"01234567890123456789012345678901"
+        readLines(paste0(getwd(), "/www/apiKeys/lastfm")) #contains one line to set lastfm apiKey like so: lastfmApiKey <-"01234567890123456789012345678901"
     } else {
+      #root is wd
       lastfmApiKey <-
-        readLines(paste0(getwd(), "/../apiKeys/lastfm")) #contains one line to set lastfm apiKey like so: lastfmApiKey <-"01234567890123456789012345678901"
+        readLines(paste0(getwd(), "inst/application/www/apiKeys/lastfm")) #contains one line to set lastfm apiKey like so: lastfmApiKey <-"01234567890123456789012345678901"
     }
     paste(
       "http://ws.audioscrobbler.com/2.0/?method=",
