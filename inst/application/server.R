@@ -23,18 +23,7 @@ concatSeparator <-
 
 function(input, output, session) {
   output$version <- renderUI({
-    list(
-      tags$p(
-        "Source code available under https://github.com/Chr96er/Last.fmVisualizer"
-      ),
-      tags$p(
-        "Version ",
-        paste(VERSION[1:3], collapse = "."),
-        "; build ",
-        VERSION[4],
-        align = "right"
-      )
-    )
+    renderVersion(url = "https://github.com/Chr96er/Last.fmVisualizer")
   })
   
   output$manual <- renderUI({
