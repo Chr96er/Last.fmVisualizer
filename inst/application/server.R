@@ -33,40 +33,46 @@ function(input, output, session) {
   })
   
   output$head <- renderUI({
+    if (is.null(input$element)) {
+      return(NULL)
+    }
     list(
       htmlStyle(),
       tags$link(href = "context/context.bootstrap.css"),
       tags$script(src = "context/context.js"),
+      tags$script(src = "//code.jquery.com/ui/1.12.1/jquery-ui.js"),
       tags$script(
-        "
-        $(function(){
-        $('body').on('contextmenu', 'path', function(){
-        if(typeof contextTrigger == 'undefined'){
-        contextTrigger = true;
-        }
-        contextTrigger = !contextTrigger;
-        linkID = $(this).index();
-        });
-        });
-        context.init({
-        fadeSpeed: 100,
-        filter: function($obj){},
-        above: 'auto',
-        preventDoubleContext: true,
-        compress: false
-        });
-        context.attach('path', [{text: 'Open in Spotify', action: function(e){
-        Shiny.onInputChange('contextmenu', linkID + '_' + 'spotify' + '_' + contextTrigger);
-        }},
-        {text: 'Open in last.FM', action: function(e){
-        Shiny.onInputChange('contextmenu', linkID + '_' + 'lastfm' + '_' + contextTrigger);
-        }}]);
-        "
-      ),
-      HTML(
-        '<script type="text/javascript" src="//code.jquery.com/ui/1.11.1/jquery-ui.js">'
-      )
+        ifelse(
+          input$element %in% c("Artist-Track", "Artist-Album", "Artist"),
+          
+          "
+          $(function(){
+          $('body').on('contextmenu', 'path', function(){
+          if(typeof contextTrigger == 'undefined'){
+          contextTrigger = true;
+          }
+          contextTrigger = !contextTrigger;
+          linkID = $(this).index();
+          });
+          });
+          context.init({
+          fadeSpeed: 100,
+          filter: function($obj){},
+          above: 'auto',
+          preventDoubleContext: true,
+          compress: false
+          });
+          context.attach('path', [{text: 'Open in Spotify', action: function(e){
+          Shiny.onInputChange('contextmenu', linkID + '_' + 'spotify' + '_' + contextTrigger);
+          }},
+          {text: 'Open in last.FM', action: function(e){
+          Shiny.onInputChange('contextmenu', linkID + '_' + 'lastfm' + '_' + contextTrigger);
+          }}]);
+          ",
+          "context.destroy('path')"
+        )
     )
+  )
     })
   
   getUsername <- reactive({
@@ -82,25 +88,9 @@ function(input, output, session) {
         input$limit)
     
     #variables for lastfm api
-    element <- switch(
-      input$element,
-      "Album" = "topalbums",
-      "Artist" = "topartists",
-      "Track" = "toptracks",
-      "Artist-Album" = "topalbums",
-      "Artist-Track" = "toptracks",
-      "Tag-Artist-Album-Track" = "toptracks"
-    )
+    element <- lookupElement(input$element)
     
-    period <- switch(
-      input$period,
-      "Week" = "7day",
-      "Month" = "1month",
-      "3 Months" = "3month",
-      "6 Months" = "6month",
-      "Year" = "12month",
-      "Overall" = "overall"
-    )
+    period <- lookupPeriod(input$period)
     
     username <- getUsername()
     limit <- input$limit
@@ -139,7 +129,8 @@ function(input, output, session) {
     
     #Artistname does not necessarily exist
     artistName = NULL
-    if (!is.null(jsonDataset$artist$name)) {
+    if (!is.null(jsonDataset$artist$name))
+    {
       artistName = gsub(jsonDataset$artist$name,
                         pattern = "-",
                         replacement = hypenReplacement)
@@ -148,43 +139,39 @@ function(input, output, session) {
     #Create dataset based on user input
     sunburstDataset <- switch(
       input$element,
-      "Album" = data.frame(name,
+      "Album" = data.table(name,
                            playcount, stringsAsFactors = F),
-      "Artist" = data.frame(name,
+      "Artist" = data.table(name,
                             playcount, stringsAsFactors = F),
-      "Track" = data.frame(name,
+      "Track" = data.table(name,
                            playcount, stringsAsFactors = F),
-      "Artist-Album" = data.frame(artistName,
+      "Artist-Album" = data.table(artistName,
                                   name,
                                   playcount, stringsAsFactors = F),
-      "Artist-Track" = data.frame(
-        artistName,
-        name,
-        mbid = jsonDataset$mbid,
-        playcount,
-        stringsAsFactors = F
-      ),
-      "Tag-Artist-Album-Track" = data.frame(
-        artistName,
-        name,
-        mbid = jsonDataset$mbid,
-        playcount,
-        stringsAsFactors = F
-      )
+      "Artist-Track" = data.table(artistName,
+                                  name,
+                                  playcount,
+                                  stringsAsFactors = F),
+      "Tag-Artist-Album-Track" = data.table(artistName,
+                                            name,
+                                            playcount,
+                                            stringsAsFactors = F)
     )
     return(sunburstDataset)
   })
   
   sunburstRenderDataset <- reactive({
     sunburstDataset <- sunburstDataset()
-    if (grepl("Tag", input$element)) {
+    if (grepl("Tag", input$element))
+    {
       sunburstDataset$album = ""
       sunburstDataset$tag = ""
       
       #If tags are needed, a request to the lastfm api is required for each track
       #This may take a while, so a progress bar is set up
       withProgress({
-        for (i in 1:nrow(sunburstDataset)) {
+        for (i in 1:nrow(sunburstDataset))
+        {
           incProgress(1,
                       message = paste0(
                         "Fetching result ",
@@ -193,36 +180,26 @@ function(input, output, session) {
                         nrow(sunburstDataset),
                         " results."
                       ))
-          if (sunburstDataset[i, ]$mbid != "") {
-            #Use mbid to look up track
-            JSONString <-
-              buildJSONString(
-                method = "track",
-                element = "info",
-                mbid = jsonDataset[i, ]$mbid
-              )
-          } else{
-            #mbid is missing -> use artist and track for lookup
-            JSONString <-
-              buildJSONString(
-                method = "track",
-                element = "info",
-                artist = jsonDataset[i, ]$artist$name,
-                track = jsonDataset[i, ]$name
-              )
-            #replace space in artist/track name for lastfm request
-            JSONString <-
-              gsub(JSONString,
-                   pattern = " ",
-                   replacement = "+")
-          }
+          JSONString <-
+            buildJSONString(
+              method = "track",
+              element = "info",
+              artist = sunburstDataset[i, artistName],
+              track = sunburstDataset[i, name]
+            )
+          #replace space in artist/track name for lastfm request
+          JSONString <-
+            gsub(JSONString,
+                 pattern = " ",
+                 replacement = "+")
           
           JSONObject <- jsonlite::fromJSON(JSONString)
           
           #set album to unknown by default since it may be missing in lastfms json answer
           sunburstDataset[i, "album"] = "unknown"
           if (is.null(JSONObject$error) &&
-              !is.null(JSONObject$track$album$title[1])) {
+              !is.null(JSONObject$track$album$title[1]))
+          {
             sunburstDataset[i, "album"] = gsub(
               JSONObject$track$album$title[1],
               pattern = "-",
@@ -233,7 +210,8 @@ function(input, output, session) {
           #set tag to unknown by default since it may be missing in lastfms json answer
           sunburstDataset[i, "tag"] = "unknown"
           if (is.null(JSONObject$error) &&
-              !is.null(JSONObject$track$toptags$tag$name[1])) {
+              !is.null(JSONObject$track$toptags$tag$name[1]))
+          {
             sunburstDataset[i, "tag"] = gsub(
               JSONObject$track$toptags$tag$name[1],
               pattern = "-",
@@ -246,20 +224,22 @@ function(input, output, session) {
         sunburstDataset[, c('tag', 'artistName', 'album', 'name', 'playcount')]
     }
     
-    sunburstDataset$mbid = NULL
     sunburstDataset <- as.matrix(sunburstDataset)
     
     concVec = c()
-    if (ncol(sunburstDataset) > 2) {
+    if (ncol(sunburstDataset) > 2)
+    {
       concVec <-
-        apply(sunburstDataset[, 1:(ncol(sunburstDataset) - 1)], 1, function(x) {
+        apply(sunburstDataset[, 1:(ncol(sunburstDataset) - 1)], 1, function(x)
+        {
           paste(x, collapse = sunburstSeparator)
         })
-    } else{
+    } else
+    {
       concVec <- sunburstDataset[, 1]
     }
     
-    sunburstDataset <- data.frame(concVec,
+    sunburstDataset <- data.table(concVec,
                                   sunburstDataset[, ncol(sunburstDataset)])
     
     return(sunburstDataset = sunburstDataset)
@@ -303,7 +283,8 @@ function(input, output, session) {
   output$friends <- renderUI({
     withProgress({
       friendsDataset <- friendsDataset()
-      rows <- lapply(friendsDataset, function(x) {
+      rows <- lapply(friendsDataset, function(x)
+      {
         list(actionLink(x,
                         x,
                         class = "friendlink"), ",")
@@ -333,46 +314,57 @@ function(input, output, session) {
   }, value = NULL, message = "Loading friend list")
     })
   
-  observeEvent(input$contextmenu, {
-    contextmenu <- input$contextmenu
-    if (is.null(contextmenu)) {
-      return(NULL)
-    }
-    contextmenu <- strsplit(contextmenu, "_")[[1]]
-    linkID <- as.numeric(contextmenu[1]) - 1
-    
-    sunburstDataset <- as.data.table(sunburstDataset())
-    #Order by artist count
-    sunburstDataset <- sunburstDataset[, .(name), by = artistName]
-    unfolded <- c()
-    for (i in 1:nrow(unique(sunburstDataset, by = "artistName"))) {
-      currentArtist <-
-        unique(sunburstDataset, by = "artistName")[i, artistName]
-      unfolded <-
-        c(unfolded, currentArtist, sunburstDataset[artistName == currentArtist, name])
-    }
-    
-    clicked <- unfolded[linkID]
-    if (sunburstDataset[artistName == clicked, .N]) {
-      #Artist clicked - get artist's tracks
-      # tracks <- sunburstDataset[artistName == clicked, name] #ToDo: Get all child tracks and pass to spotify
-      tracks <- NULL
-      artist <- clicked
-    } else {
-      #Track clicked - get artist
-      tracks <- clicked
-      artist <- sunburstDataset[name == clicked, artistName]
-      
-    }
-    switch(
-      contextmenu[2],
-      "spotify" = openInSpotify(artist, tracks),
-      "lastfm" = openInLastfm(artist, tracks)
-    )
-  })
+  observeEvent(input$contextmenu,
+               {
+                 contextmenu <- input$contextmenu
+                 if (is.null(contextmenu) ||
+                     !input$element %in% c("Artist-Track", "Artist-Album", "Artist"))
+                 {
+                   return(NULL)
+                 }
+                 type <- tolower(gsub("Artist-", "", input$element))
+                 contextmenu <- strsplit(contextmenu, "_")[[1]]
+                 linkID <- as.numeric(contextmenu[1]) - 1
+                 
+                 sunburstDataset <- sunburstDataset()
+                 #Order by artist count
+                 if (input$element == "Artist") {
+                   #artistName is in column name
+                   sunburstDataset[, artistName := name]
+                 }
+                 sunburstDataset <-
+                   sunburstDataset[, .(name), by = artistName]
+                 unfolded <- c()
+                 for (i in 1:nrow(unique(sunburstDataset, by = "artistName"))) {
+                   currentArtist <-
+                     unique(sunburstDataset, by = "artistName")[i, artistName]
+                   unfolded <-
+                     c(unfolded, currentArtist, sunburstDataset[artistName == currentArtist, name])
+                 }
+                 
+                 clicked <- unfolded[linkID]
+                 if (sunburstDataset[artistName == clicked, .N]) {
+                   #Artist clicked - get artist's tracks/albums
+                   # tracks/albums <- sunburstDataset[artistName == clicked, name] #ToDo: Get all child tracks/albums and pass to spotify
+                   tracks_albums <- NULL
+                   artist <- clicked
+                 } else {
+                   #Track clicked - get artist
+                   tracks_albums <- clicked
+                   artist <-
+                     sunburstDataset[name == clicked, artistName]
+                 }
+                 switch(
+                   contextmenu[2],
+                   "spotify" = openInSpotify(artist, tracks_albums, type = type),
+                   "lastfm" = openInLastfm(artist, tracks_albums)
+                 )
+               })
   
-  openInSpotify <- function(artist, tracks) {
-    if (is.null(tracks)) {
+  openInSpotify <- function(artist, tracks_albums, type)
+  {
+    if (is.null(tracks_albums))
+    {
       url <-
         paste0(spotifyBaseUrl,
                "search?q=",
@@ -381,48 +373,60 @@ function(input, output, session) {
                "&type=artist")
       url <- gsub(" ", "+", url)
       JSONObject <- jsonlite::fromJSON(url)
-      # uri <- JSONObject$tracks$items$u[1:length(tracks)]
-      urls <- JSONObject$artist$items$external_urls[1, ]
-    } else {
-      urls <- sapply(tracks, function(x) {
-        url <-
-          paste0(
-            spotifyBaseUrl,
-            "search?q=",
-            "track:",
-            x,
-            "%20artist:",
-            artist,
-            "&type=track"
-          )
-        url <- gsub(" ", "+", url)
-        JSONObject <- jsonlite::fromJSON(url)
-        # uri <- JSONObject$tracks$items$u[1:length(tracks)]
-        return(JSONObject$tracks$items$external_urls[1, ])
-      })
+      if(length(JSONObject$artist$items) > 0){
+        extUrl <- JSONObject$artist$items$external_urls[1, ]
+      }
+    } else
+    {
+      url <-
+        paste0(
+          spotifyBaseUrl,
+          "search?q=",
+          type,
+          ":",
+          tracks_albums,
+          "%20artist:",
+          artist,
+          "&type=",
+          type
+        )
+      url <- gsub(" ", "+", url)
+      JSONObject <- jsonlite::fromJSON(url)
+      if(!is.null(c(JSONObject$tracks$items$external_urls[1],
+         JSONObject$albums$items$external_urls[1]))){
+        extUrl = max(JSONObject$tracks$items$external_urls[1, ],
+                     JSONObject$albums$items$external_urls[1, ])  
+      } else {
+        extUrl = NULL
+      }
+      
     }
-    
-    extUrl <- urls[1] #ToDo: Multiple tracks, currently only first
-    openLink(extUrl, "modal")
+    if(!is.null(extUrl)){
+      openLink(extUrl, "modal")
+    }
   }
   
-  openInLastfm <- function(artist, tracks) {
-    track <- tracks[1]
-    if (is.null(track)) {
+  openInLastfm <- function(artist, tracks_albums)
+  {
+    track_album <- tracks_albums[1]
+    if (is.null(track_album))
+    {
       url <- paste0(lastfmBaseUrl,
                     artist)
-    } else {
+    } else
+    {
       url <- paste0(lastfmBaseUrl,
                     artist,
                     "/_/",
-                    track)
+                    track_album)
     }
     url <- gsub(" ", "+", url)
     openLink(url, "tab") #Can't display last.fm in modal/iframe
   }
   
   output$username <- renderUI({
-    if (is.null(input$friend)) {
+    if (is.null(input$friend))
+    {
       textInput("username",
                 "last.fm Username:",
                 value = "",

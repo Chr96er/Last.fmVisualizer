@@ -56,6 +56,32 @@ buildJSONString <-
   }
 
 #'@export
+lookupElement <- function(element) {
+  return(switch(
+    element,
+    "Album" = "topalbums",
+    "Artist" = "topartists",
+    "Track" = "toptracks",
+    "Artist-Album" = "topalbums",
+    "Artist-Track" = "toptracks",
+    "Tag-Artist-Album-Track" = "toptracks"
+  ))
+}
+
+#'@export
+lookupPeriod <- function(period) {
+  return(switch(
+    period,
+    "Week" = "7day",
+    "Month" = "1month",
+    "3 Months" = "3month",
+    "6 Months" = "6month",
+    "Year" = "12month",
+    "Overall" = "overall"
+  ))
+}
+
+#'@export
 openLink <- function(url, type = "modal") {
   switch(type,
          "modal" = openLinkInModal(url),
