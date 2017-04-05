@@ -4,4 +4,4 @@ The lastfmVisualizer application plots a user's top tags, artists, albums, and t
 
 Try example application: https://chr96er.shinyapps.io/lastfm/
 
-![alt tag](https://raw.githubusercontent.com/Chr96er/Last.fmVisualizer/master/inst/application/www/images/README.jpg)
+![alt tag](https://raw.githubusercontent.com/Chr96er/Last.fmVisualizer/master/inst/application/www/images/README.png)
