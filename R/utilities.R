@@ -18,7 +18,7 @@ buildJSONString <-
            track = "",
            period = "") {
     print(getwd())
-    if (file.exists(paste0(getwd(), "/inst/apiKeys/lastfm.R"))) {
+    if (file.exists(paste0(getwd(), "/inst/apiKeys/lastfm"))) {
       lastfmApiKey <-
         readLines(paste0(getwd(), "/inst/apiKeys/lastfm")) #contains one line to set lastfm apiKey like so: lastfmApiKey <-"01234567890123456789012345678901"
     } else {
