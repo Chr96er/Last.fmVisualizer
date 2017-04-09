@@ -32,6 +32,10 @@ function(input, output, session) {
     )
   })
   
+  renderContextMenu <- reactive({
+    input$element %in% c("Artist-Track", "Artist-Album", "Artist")
+  })
+  
   output$head <- renderUI({
     if (is.null(input$element)) {
       return(NULL)
@@ -41,40 +45,57 @@ function(input, output, session) {
       tags$link(href = "context/context.bootstrap.css"),
       tags$script(src = "context/context.js"),
       tags$script(src = "//code.jquery.com/ui/1.12.1/jquery-ui.js"),
-      tags$script(
+      tags$script(HTML(
         ifelse(
-          input$element %in% c("Artist-Track", "Artist-Album", "Artist"),
-          
-          "
-          $(function(){
-          $('body').on('contextmenu', 'path', function(){
-          if(typeof contextTrigger == 'undefined'){
-          contextTrigger = true;
-          }
-          contextTrigger = !contextTrigger;
-          linkID = $(this).index();
-          });
-          });
-          context.init({
-          fadeSpeed: 100,
-          filter: function($obj){},
-          above: 'auto',
-          preventDoubleContext: true,
-          compress: false
-          });
-          context.attach('path', [{text: 'Open in Spotify', action: function(e){
-          Shiny.onInputChange('contextmenu', linkID + '_' + 'spotify' + '_' + contextTrigger);
-          }},
-          {text: 'Open in last.FM', action: function(e){
-          Shiny.onInputChange('contextmenu', linkID + '_' + 'lastfm' + '_' + contextTrigger);
-          }}]);
-          ",
-          "context.destroy('path')"
-        )
+          renderContextMenu(),
+          paste0(
+            "
+            $(function(){
+            $('body').on('contextmenu', 'path', function(){
+            if(typeof contextTrigger == 'undefined'){
+            contextTrigger = true;
+            }
+            contextTrigger = !contextTrigger;
+            linkID = $(this).index();
+            });
+            });
+            context.init({
+            fadeSpeed: 100,
+            filter: function($obj){},
+            above: 'auto',
+            preventDoubleContext: true,
+            compress: false
+            });
+            
+            context.attach('path', [{text: 'Open in Spotify ', innerHTML: '",
+            paste0(
+              insertIcon(
+                src = "open_in_browser.png",
+                id = "open_in_browser",
+                class = "contextMenuIcons"
+              )
+            ),
+            "', action: function(e){
+            Shiny.onInputChange('contextmenu', linkID + '_' + 'spotify' + '_' + contextTrigger);
+            }},
+            {text: 'Open in last.FM ', innerHTML: '",
+            paste0(
+              insertIcon(
+                src = "open_in_new.png",
+                id = "open_in_new",
+                class = "contextMenuIcons"
+              )
+            ),
+            "', action: function(e){
+            Shiny.onInputChange('contextmenu', linkID + '_' + 'lastfm' + '_' + contextTrigger);
+            }}]);
+            "
+      ),
+      "context.destroy('path')"
     )
-  )
-    })
-  
+    ))
+    )
+            })
   getUsername <- debounce(reactive({
     #Make sure all required variables exist, else exit function
     req(input$username)
@@ -446,4 +467,4 @@ function(input, output, session) {
       textInput("username", "last.fm Username:", input$friend)
     }
   })
-  }
+            }

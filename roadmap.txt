@@ -2,4 +2,5 @@ release
  - debugging
 
 future
+ - spotify integration for tags and album/track only
  - use musicbrainz api for album/tag since it is often missing in lastfm answer
