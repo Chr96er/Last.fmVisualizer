@@ -6,14 +6,12 @@
 #'@import shiny
 #'@import shinyUtils
 #'@importFrom shinyjs runjs
-library(shiny)
-library(shinyUtils)
-library(data.table)
 library(Last.fmVisualizer)
 
 VERSION = strsplit(gsub(".VERSION", replacement = "", dir()[grep(dir(), pattern = "VERSION")]), "\\.")[[1]]
 spotifyBaseUrl <- "https://api.spotify.com/v1/"
 lastfmBaseUrl <- "https://www.last.fm/de/music/"
+lastfmElements <- c("topartists", "topalbums", "toptracks")
 
 #Temporary fix: variables for sunburst using hyphen as only split-character
 hypenReplacement <- " " #Hyphens are replaced by this string
@@ -104,42 +102,116 @@ function(input, output, session) {
   
   sunburstDataset <- reactive({
     #Make sure all required variables exist, else exit function
-    req(input$element,
+    req(
+      # input$element,
         input$period,
         input$limit)
     
     #variables for lastfm api
-    element <- lookupElement(input$element)
+    # element <- lookupElement(input$element)
     
     period <- lookupPeriod(input$period)
     
     username <- getUsername()
     limit <- input$limit
     
-    JSONString <-
-      buildJSONString(
-        method = "user",
-        element = element,
-        username = username,
-        limit = limit,
-        period = period
-      )
     
     #get json from lastfm and parse to object
     withProgress({
-      JSONObject <-
-        jsonlite::fromJSON(JSONString)
-    }, style = "old", message = "Loading...")
+    userDatasets <- sapply(lastfmElements, function(element){
+      JSONString <-
+        buildJSONString(
+          method = "user",
+          element = element,
+          username = username,
+          limit = limit,
+          period = period
+        )
+      
+        JSONObject <-
+          jsonlite::fromJSON(JSONString)
+        incProgress(amount = 1)
+      return(JSONObject)
+    })
+    }, max = length(lastfmElements), message = "Loading...")
+    
+    userDatasets <- readRDS("inst/application/userDatasets.RDS")
+    artistList <- userDatasets$topartists.topartists$artist
+    artists <- as.data.table(cbind(artist = artistList[,1:5], 
+                                   image = sapply(artistList$image, function(x) return(x$`#text`[1]))))
+    albumList <- userDatasets$topalbums.topalbums$album
+    albums <- as.data.table(cbind(album = albumList[,1:4], 
+                                  artist = albumList$artist, 
+                                  image = sapply(albumList$image, function(x) return(x$`#text`[1]))))
+    trackList <- userDatasets$toptracks.toptracks$track
+    tracks <- as.data.table(cbind(track = trackList[,1:5], 
+                                  artist = trackList$artist, 
+                                  image = sapply(trackList$image, function(x) return(x$`#text`[1]))))
+    
+    
+    withProgress({
+      for (i in 1:nrow(tracks))
+      {
+        incProgress(1,
+                    message = paste0(
+                      "Fetching result ",
+                      i,
+                      " of ",
+                      nrow(tracks),
+                      " results."
+                    ))
+        JSONString <-
+          buildJSONString(
+            method = "track",
+            element = "info",
+            artist = tracks[i, artist.name],
+            track = tracks[i, track.name]
+          )
+        #replace space in artist/track name for lastfm request
+        JSONString <-
+          gsub(JSONString,
+               pattern = " ",
+               replacement = "+")
+        
+        JSONObject <- jsonlite::fromJSON(JSONString)
+        
+        #set album to unknown by default since it may be missing in lastfms json answer
+        tracks[i, "album"] = "unknown"
+        if (is.null(JSONObject$error) &&
+            !is.null(JSONObject$track$album$title[1]))
+        {
+          tracks[i, "album"] = gsub(
+            JSONObject$track$album$title[1],
+            pattern = "-",
+            replacement = hypenReplacement
+          )
+        }
+        
+        #set tag to unknown by default since it may be missing in lastfms json answer
+        tracks[i, "tag"] = "unknown"
+        if (is.null(JSONObject$error) &&
+            !is.null(JSONObject$track$toptags$tag$name[1]))
+        {
+          tracks[i, "tag"] = gsub(
+            JSONObject$track$toptags$tag$name[1],
+            pattern = "-",
+            replacement = hypenReplacement
+          )
+        }
+      }
+    }, min = 1, max = nrow(tracks))
+    
+    
     
     #Make sure JSONString is valid by parsing jsonstring, which should contain a message in case of an error
-    shiny::validate(need(is.null(JSONObject$error), message = JSONObject$message))
+    # shiny::validate(need(is.null(JSONObject$error), message = JSONObject$message))
     
-    jsonDataset <- switch(
-      element,
-      "topalbums" = JSONObject$topalbums$album,
-      "topartists" = JSONObject$topartists$artist,
-      "toptracks" = JSONObject$toptracks$track
-    )
+    # jsonDataset <- switch(
+    #   element,
+    #   "topalbums" = JSONObject$topalbums$album,
+    #   "topartists" = JSONObject$topartists$artist,
+    #   "toptracks" = JSONObject$toptracks$track
+    # )
     
     shiny::validate(need(!is.null(nrow(jsonDataset)), message = "No data for user available"))
     
