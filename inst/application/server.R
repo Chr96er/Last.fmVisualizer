@@ -28,7 +28,8 @@ function(input, output, session) {
   
   output$manual <- renderUI({
     manual(
-      "The lastfmVisualizer application plots a user's top tags, artists, albums, and tracks as sunburst charts, using the last.fm API. Insert a last.fm user name or select a friend to get started."
+      "The Last.fmVisualizer application plots a user's top tags, artists, albums, and tracks as sunburst charts, using the last.fm API. For Artist, Artist-Album, and Artist-Track charts a contextmenu allows access to the selected element's Spotify and Last.fm link. Insert a last.fm user name or select a friend to get started.
+      Note: Since 29/05/17 Spotify requires access tokens to all Web API Endpoints. Spotify integration is therefore not possible until further notice."
     )
   })
   
@@ -67,18 +68,19 @@ function(input, output, session) {
             compress: false
             });
             
-            context.attach('path', [{text: 'Open in Spotify ', innerHTML: '",
-            paste0(
-              insertIcon(
-                src = "open_in_browser.png",
-                id = "open_in_browser",
-                class = "contextMenuIcons"
-              )
-            ),
-            "', action: function(e){
-            Shiny.onInputChange('contextmenu', linkID + '_' + 'spotify' + '_' + contextTrigger);
-            }},
-            {text: 'Open in last.FM ', innerHTML: '",
+            context.attach('path', [",
+            # "{text: 'Open in Spotify ', innerHTML: '",
+            # paste0(
+            #   insertIcon(
+            #     src = "open_in_browser.png",
+            #     id = "open_in_browser",
+            #     class = "contextMenuIcons"
+            #   )
+            # ),
+            # "', action: function(e){
+            # Shiny.onInputChange('contextmenu', linkID + '_' + 'spotify' + '_' + contextTrigger);
+            # }},"
+            "{text: 'Open in last.FM ', innerHTML: '",
             paste0(
               insertIcon(
                 src = "open_in_new.png",
